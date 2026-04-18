@@ -2,28 +2,34 @@ import asyncio
 from mcrcon import MCRcon
 import config
 import logging
+import re
 
 class ServerManager:
+    is_busy = False
+
     @staticmethod
     async def run_command(command: str) -> str:
-        """Отправляет команду на сервер через RCON"""
+        """Sends a command to the server via RCON"""
         try:
-            # mcrcon вызывает signal внутри, что падает в asyncio.to_thread
-            # Поэтому выполняем синхронно в основном потоке (блокировка на миллисекунды не страшна)
+            # mcrcon triggers signal internally, which fails in asyncio.to_thread
+            # So we run it synchronously in the main thread (blocking for ms is fine)
             with MCRcon(config.RCON_HOST, config.RCON_PASSWORD, config.RCON_PORT) as mcr:
                 response = mcr.command(command)
-                return response if response else "Команда отправлена (нет вывода)"
+                if response:
+                    # Strip color codes like §c or §4 returned by the server
+                    response = re.sub(r'§[0-9a-fk-orA-FK-OR]', '', response)
+                return response if response else "Command executed (no output)"
         except Exception as e:
-            logging.error(f"Ошибка RCON: {e}")
-            return f"❌ Ошибка RCON (сервер выключен или не настроен?): {e}"
+            logging.error(f"RCON Error: {e}")
+            return f"❌ RCON Error (server off or not configured?): {e}"
 
     @staticmethod
     async def is_rcon_alive() -> bool:
-        """Проверяет доступность RCON порта (что сервер полностью загрузился)"""
+        """Checks if RCON port is accessible (server fully booted)"""
         def _check():
             import socket
             try:
-                # Простейшая проверка открыт ли порт (занимает миллисекунды)
+                # Simple port check (takes milliseconds)
                 with socket.create_connection((config.RCON_HOST, config.RCON_PORT), timeout=2):
                     return True
             except Exception:
@@ -32,7 +38,7 @@ class ServerManager:
 
     @staticmethod
     async def is_running() -> bool:
-        """Проверяет, запущен ли сервер (жива ли screen сессия)"""
+        """Checks if server is running (screen session is alive)"""
         process = await asyncio.create_subprocess_shell(
             f"screen -list | grep -q '\\.{config.SCREEN_SESSION_NAME}\\b'",
             stdout=asyncio.subprocess.PIPE,
@@ -43,9 +49,9 @@ class ServerManager:
 
     @staticmethod
     async def start_server() -> bool:
-        """Запускает сервер в фоне через screen"""
+        """Starts the server in background via screen"""
         if await ServerManager.is_running():
-            return False  # Уже запущен
+            return False  # Already running
             
         cmd = f"cd {config.SERVER_PATH} && screen -dmS {config.SCREEN_SESSION_NAME} ./start.sh"
         process = await asyncio.create_subprocess_shell(cmd)
@@ -54,16 +60,16 @@ class ServerManager:
 
     @staticmethod
     async def stop_server() -> str:
-        """Останавливает сервер штатно через RCON"""
+        """Stops the server gracefully via RCON"""
         if not await ServerManager.is_running():
-            return "❌ Сервер и так выключен."
+            return "❌ Server is already off."
             
         response = await ServerManager.run_command("stop")
-        return f"Отправлена команда остановки... Ответ: {response}"
+        return f"Stop command sent... Response: {response}"
 
     @staticmethod
     async def get_logs(lines: int = 20) -> str:
-        """Возвращает последние строчки лога"""
+        """Returns the last lines of the log"""
         log_path = f"{config.SERVER_PATH}/logs/latest.log"
         try:
             process = await asyncio.create_subprocess_shell(
@@ -72,6 +78,6 @@ class ServerManager:
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await process.communicate()
-            return stdout.decode('utf-8')[-4000:] # Защита от лимитов Telegram (4096 символов)
+            return stdout.decode('utf-8')[-4000:] # Protect against Telegram message limits (4096 chars)
         except Exception as e:
-            return f"❌ Ошибка чтения логов: {e}"
+            return f"❌ Error reading logs: {e}"

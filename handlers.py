@@ -12,7 +12,7 @@ from locales import t
 
 router = Router()
 
-# Простейший FSM для ожидания ручного ввода команды
+# Simple FSM for waiting for manual command input
 class RconInput(StatesGroup):
     waiting_for_command = State()
 
@@ -21,7 +21,7 @@ def is_admin(user_id: int) -> bool:
 
 @router.message(Command("start", "menu", "help", "status"))
 async def cmd_menu(message: types.Message):
-    """Выводит главное меню, помощь или статус бота для админов"""
+    """Displays main menu, help, or bot status for admins"""
     uid = message.from_user.id
     if not is_admin(uid):
         await message.reply(t("en", "access_denied")) # Default fallback
@@ -52,7 +52,7 @@ async def cmd_menu(message: types.Message):
 
 @router.message(Command("lang", "language"))
 async def cmd_lang(message: types.Message):
-    """Смена языка интерфейса"""
+    """Change interface language"""
     if not is_admin(message.from_user.id):
         return
     await message.answer(t("en", "choose_lang"), reply_markup=lang_selection_kb())
@@ -76,7 +76,7 @@ async def handle_lang_selection(call: types.CallbackQuery):
 
 @router.callback_query(F.data.startswith("action_"))
 async def handle_server_actions(call: types.CallbackQuery, state: FSMContext):
-    """Обрабатывает основные действия сервера: старт, стоп, игроки и логи"""
+    """Handles basic server actions: start, stop, players, and logs"""
     uid = call.from_user.id
     if not is_admin(uid):
         await call.answer("🚫", show_alert=True)
@@ -85,48 +85,58 @@ async def handle_server_actions(call: types.CallbackQuery, state: FSMContext):
     lang = get_user_lang(uid) or "en"
     action = call.data.split("_")[1]
 
-    if action == "start":
-        await call.answer(t(lang, "act_start"))
-        success = await ServerManager.start_server()
-        if not success:
-            await call.message.edit_text(t(lang, "act_start_fail"), reply_markup=main_menu_kb(True, lang))
+    # Lock for concurrent start/stop actions
+    if action in ["start", "stop", "restart"]:
+        if ServerManager.is_busy:
+            await call.answer(t(lang, "server_busy"), show_alert=True)
             return
 
-        # Динамичная загрузка (пока RCON не появится)
-        await call.message.edit_text(t(lang, "server_starting", sec=0), reply_markup=None, parse_mode="Markdown")
-        
-        is_online = False
-        import asyncio
-        for i in range(1, 40): # Ждем до 120 секунд
-            await asyncio.sleep(3)
-            # Обновляем каждый 3й цикл чтобы не заспамить API Telegram (каждые 9 сек)
-            if i % 3 == 0:
-                try:
-                    await call.message.edit_text(t(lang, "server_starting", sec=i*3), reply_markup=None, parse_mode="Markdown")
-                except Exception:
-                    pass
+        ServerManager.is_busy = True
+        try:
+            if action == "start":
+                await call.answer(t(lang, "act_start"))
+                success = await ServerManager.start_server()
+                if not success:
+                    await call.message.edit_text(t(lang, "act_start_fail"), reply_markup=main_menu_kb(True, lang))
+                    return
 
-            if await ServerManager.is_rcon_alive():
-                is_online = True
-                break
+                # Dynamic loading (until RCON is available)
+                await call.message.edit_text(t(lang, "server_starting", sec=0), reply_markup=None, parse_mode="Markdown")
                 
-        if is_online:
-            await call.message.edit_text(t(lang, "server_online"), reply_markup=main_menu_kb(True, lang), parse_mode="Markdown")
-        else:
-            await call.message.edit_text(t(lang, "server_start_timeout"), reply_markup=main_menu_kb(True, lang), parse_mode="Markdown")
+                is_online = False
+                import asyncio
+                for i in range(1, 40): # Wait up to 120 seconds
+                    await asyncio.sleep(3)
+                    # Update every 3rd cycle to avoid Telegram API spam (every 9 sec)
+                    if i % 3 == 0:
+                        try:
+                            await call.message.edit_text(t(lang, "server_starting", sec=i*3), reply_markup=None, parse_mode="Markdown")
+                        except Exception:
+                            pass
 
-    elif action == "stop":
-        await call.answer(t(lang, "act_stop"))
-        res = await ServerManager.stop_server()
-        await call.message.edit_text(t(lang, "act_stop_resp", res=res), reply_markup=main_menu_kb(False, lang), parse_mode="Markdown")
+                    if await ServerManager.is_rcon_alive():
+                        is_online = True
+                        break
+                        
+                if is_online:
+                    await call.message.edit_text(t(lang, "server_online"), reply_markup=main_menu_kb(True, lang), parse_mode="Markdown")
+                else:
+                    await call.message.edit_text(t(lang, "server_start_timeout"), reply_markup=main_menu_kb(True, lang), parse_mode="Markdown")
 
-    elif action == "restart":
-        await call.answer(t(lang, "act_restart"))
-        if not await ServerManager.is_running():
-            await call.message.edit_text(t(lang, "act_restart_fail"), reply_markup=main_menu_kb(False, lang))
-            return
-        res = await ServerManager.stop_server()
-        await call.message.edit_text(t(lang, "act_restart_ok"), reply_markup=main_menu_kb(False, lang), parse_mode="Markdown")
+            elif action == "stop":
+                await call.answer(t(lang, "act_stop"))
+                res = await ServerManager.stop_server()
+                await call.message.edit_text(t(lang, "act_stop_resp", res=res), reply_markup=main_menu_kb(False, lang), parse_mode="Markdown")
+
+            elif action == "restart":
+                await call.answer(t(lang, "act_restart"))
+                if not await ServerManager.is_running():
+                    await call.message.edit_text(t(lang, "act_restart_fail"), reply_markup=main_menu_kb(False, lang))
+                    return
+                res = await ServerManager.stop_server()
+                await call.message.edit_text(t(lang, "act_restart_ok"), reply_markup=main_menu_kb(False, lang), parse_mode="Markdown")
+        finally:
+            ServerManager.is_busy = False
 
     elif action == "status":
         await call.answer()
@@ -139,7 +149,7 @@ async def handle_server_actions(call: types.CallbackQuery, state: FSMContext):
         try:
             await call.message.edit_text(main_text, reply_markup=main_menu_kb(running, lang), parse_mode="Markdown")
         except Exception:
-            pass # Если текст тот же самый, Telegram бросает MessageNotModified, игнорируем
+            pass # Ignore MessageNotModified if text hasn't changed
 
     elif action == "players":
         await call.answer(t(lang, "btn_players") + "...")
@@ -163,7 +173,7 @@ async def handle_server_actions(call: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith("cmd_"))
 async def handle_rcon_commands(call: types.CallbackQuery):
-    """Выполняет предустановленные команды RCON (время/погода)"""
+    """Executes predefined RCON commands (time/weather)"""
     uid = call.from_user.id
     if not is_admin(uid):
         await call.answer("🚫", show_alert=True)
@@ -179,14 +189,14 @@ async def handle_rcon_commands(call: types.CallbackQuery):
 
 @router.callback_query(F.data.startswith("menu_"))
 async def handle_menus(call: types.CallbackQuery, state: FSMContext):
-    """Переключение между подменю"""
+    """Switch between submenus"""
     uid = call.from_user.id
     if not is_admin(uid):
         await call.answer("🚫", show_alert=True)
         return
 
     lang = get_user_lang(uid) or "en"
-    await state.clear()  # Сброс, если юзер был в ожидании команды
+    await state.clear()  # Reset if user was waiting for command input
 
     menu = call.data.split("_")[1]
     running = await ServerManager.is_running()
@@ -202,7 +212,7 @@ async def handle_menus(call: types.CallbackQuery, state: FSMContext):
 
 @router.message(RconInput.waiting_for_command, F.text)
 async def process_custom_command(message: types.Message, state: FSMContext):
-    """Обрабатывает ручной ввод команды от админа"""
+    """Handles manual command input from admin"""
     uid = message.from_user.id
     if not is_admin(uid):
         return
@@ -210,7 +220,7 @@ async def process_custom_command(message: types.Message, state: FSMContext):
     lang = get_user_lang(uid) or "en"
     command = message.text.strip()
     if command.startswith("/"):
-        command = command[1:] # RCON принимает без слеша
+        command = command[1:] # RCON accepts commands without slash
 
     logging.info(f"Admin {message.from_user.id} Executing RCON: {command}")
     

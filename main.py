@@ -9,19 +9,19 @@ async def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
     if not config.BOT_TOKEN:
-        logging.error("Не указан BOT_TOKEN в файле .env!")
+        logging.error("BOT_TOKEN is missing in .env!")
         return
         
     if not config.ADMIN_IDS:
-        logging.warning("Список ADMIN_IDS пуст! Никто не сможет пользоваться ботом.")
+        logging.warning("ADMIN_IDS is empty! No one can use the bot.")
 
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
     
-    # Подключаем роутер со всеми хендлерами
+    # Include the router with all handlers
     dp.include_router(router)
     
-    logging.info("🤖 Бот запущен! Ожидание команд...")
+    logging.info("🤖 Bot started! Waiting for commands...")
     try:
         await dp.start_polling(bot)
     finally:
