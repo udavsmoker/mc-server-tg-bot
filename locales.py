@@ -1,12 +1,12 @@
 TEXTS = {
     "ru": {
         "access_denied": "🚫 У вас нет доступа к этому боту.",
-        "menu_title": "💻 **Minecraft Server Manager**\n\nТекущий статус: {status}\nВыберите действие:",
+        "menu_title": "💻 **[{server_name}] Server Manager**\n\nТекущий статус: {status}\nВыберите действие:",
         "status_running": "🟢 ЗАПУЩЕН",
         "status_stopped": "🔴 ВЫКЛЮЧЕН",
         "btn_start": "🟢 Включить сервер",
         "btn_stop": "🔴 Выключить сервер",
-        "btn_restart": "🔄 Перезапустить (мягко)",
+        "btn_restart": "🔄 Перезапустить",
         "btn_players": "👥 Игроки онлайн",
         "btn_world": "🌍 Управление миром",
         "btn_logs": "📜 Последние логи (20 строк)",
@@ -38,19 +38,33 @@ TEXTS = {
         "server_online": "✅ **Сервер успешно запущен и готов к работе!**",
         "server_start_timeout": "⚠️ **Сервер запускается слишком долго, или RCON недоступен. Проверьте консоль или логи.**",
         "server_busy": "⏳ Сервер уже выполняет другое действие (запуск или остановку). Пожалуйста, подождите...",
-        "act_status": "💻 **Статус сервера**\n\nПроцесс (screen): {status_str}\nRCON: {rcon}",
+        "act_status": "💻 **Статус сервера [{server_name}]**\n\nПроцесс (screen): {status_str}\nRCON: {rcon}",
         "lang_selected": "Язык изменен на Русский!",
         "choose_lang": "🌍 Choose your language / Выберите язык:",
-        "help_text": "📖 **Справка по боту MC Server TG Bot**\n\nЭтот бот управляет вашим сервером Minecraft.\n\n**Список команд:**\n/start или /menu — Открыть главное меню.\n/status — Быстро узнать статус процесса и RCON.\n/lang — Сменить язык (Change language).\n/help — Показать эту справку.\n\n**Гайд по кнопкам:**\n- **Включить/Выключить**: Запускает скрипт сервера в фоне (`screen`) и штатно останавливает его через RCON `stop`.\n- **Игроки онлайн**: Запрашивает через сервер список онлайна.\n- **Управление миром**: Окно для изменения времени суток или погоды.\n- **Последние логи**: Считывает последние 20 строк из файла `latest.log`, чтобы понять, на чем сервер завис.\n- **Отправить команду**: Позволяет написать в чат произвольную команду сервера (например `kick User_123` или `say Внимание! Рестарт через 5 минут`)."
+        "help_text": "📖 **Справка по боту MC Server TG Bot**\n\nЭтот бот управляет вашим сервером Minecraft.\n\n**Список команд:**\n/start или /menu — Открыть главное меню.\n/status — Быстро узнать статус процесса и RCON.\n/servers — Обзор статуса всех серверов.\n/switch — Переключить текущий сервер.\n/lang — Сменить язык (Change language).\n/help — Показать эту справку.\n\n**Гайд по кнопкам:**\n- **Включить/Выключить**: Запускает скрипт сервера в фоне и штатно останавливает его через RCON `stop`.\n- **Перезапустить**: Выполняет полный автоматический цикл перезапуска.\n- **Игроки онлайн**: Запрашивает через сервер список онлайна.\n- **Управление миром**: Изменение времени суток или погоды.\n- **Последние логи**: Считывает последние 20 строк из логов.\n- **Отправить команду**: Позволяет написать в чат произвольную команду сервера.",
+        
+        # Multi-server translations
+        "btn_switch": "🔀 Сменить сервер",
+        "btn_servers_overview": "📊 Обзор всех серверов",
+        "pick_server": "🌍 **Выберите сервер для управления:**",
+        "server_selected": "✅ Выбран сервер: **{name}**",
+        "no_server_selected": "⚠️ Активный сервер не выбран. Выберите один из списка:",
+        "restart_stopping": "🔄 **Перезапуск {name}...**\n🛑 Отправка команды остановки...",
+        "restart_waiting": "⏳ Ожидание выключения... ({sec} сек)",
+        "restart_starting": "🟢 Сервер выключен. Запуск процесса...",
+        "restart_done": "✅ **{name}** успешно перезапущен и онлайн!",
+        "restart_fail": "❌ Перезапуск не удался. Проверьте логи.",
+        "agent_error": "❌ Ошибка подключения к агенту сервера: {err}",
+        "servers_overview": "📊 **Обзор статуса всех серверов**\n\n{list}"
     },
     "en": {
         "access_denied": "🚫 You don't have access to this bot.",
-        "menu_title": "💻 **Minecraft Server Manager**\n\nStatus: {status}\nSelect an action:",
+        "menu_title": "💻 **[{server_name}] Server Manager**\n\nStatus: {status}\nSelect an action:",
         "status_running": "🟢 RUNNING",
         "status_stopped": "🔴 STOPPED",
         "btn_start": "🟢 Start Server",
         "btn_stop": "🔴 Stop Server",
-        "btn_restart": "🔄 Soft Restart",
+        "btn_restart": "🔄 Restart Server",
         "btn_players": "👥 Players Online",
         "btn_world": "🌍 World Management",
         "btn_logs": "📜 Latest Logs (20 lines)",
@@ -82,10 +96,24 @@ TEXTS = {
         "server_online": "✅ **Server successfully started and ready!**",
         "server_start_timeout": "⚠️ **Server is taking too long to start, or RCON is unavailable. Check logs.**",
         "server_busy": "⏳ The server is currently busy with another action (starting or stopping). Please wait...",
-        "act_status": "💻 **Server Status**\n\nProcess (screen): {status_str}\nRCON: {rcon}",
+        "act_status": "💻 **Server Status [{server_name}]**\n\nProcess (screen): {status_str}\nRCON: {rcon}",
         "lang_selected": "Language set to English!",
         "choose_lang": "🌍 Choose your language / Выберите язык:",
-        "help_text": "📖 **MC Server TG Bot Help**\n\nThis bot manages your Minecraft server.\n\n**Commands:**\n/start or /menu — Open the main interactive menu.\n/status — Quickly check process and RCON status.\n/lang — Change language (сменить язык).\n/help — Show this help message.\n\n**Button Guide:**\n- **Start / Stop**: Launches the server script in the background (`screen`) and smoothly stops it via RCON `stop`.\n- **Players Online**: Fetches the list of connected players.\n- **World Management**: Menu to quickly change time of day or weather.\n- **Latest Logs**: Reads the last 20 lines of the `latest.log` file, useful when troubleshooting.\n- **Custom Command**: Wait for your text input and send it to the server console (e.g. `kick User_123` or `say Warning! Restart in 5 mins`)."
+        "help_text": "📖 **MC Server TG Bot Help**\n\nThis bot manages your Minecraft server.\n\n**Commands:**\n/start or /menu — Open the main interactive menu.\n/status — Quickly check process and RCON status.\n/servers — Show status of all servers.\n/switch — Change currently active server.\n/lang — Change language (сменить язык).\n/help — Show this help message.\n\n**Button Guide:**\n- **Start / Stop**: Launches the server script in the background and smoothly stops it via RCON `stop`.\n- **Restart**: Performs a full automated restart cycle.\n- **Players Online**: Fetches the list of connected players.\n- **World Management**: Menu to quickly change time of day or weather.\n- **Latest Logs**: Reads the last 20 lines of logs.\n- **Custom Command**: Send a custom command to the server console.",
+        
+        # Multi-server translations
+        "btn_switch": "🔀 Switch Server",
+        "btn_servers_overview": "📊 All Servers",
+        "pick_server": "🌍 **Select a server to manage:**",
+        "server_selected": "✅ Server selected: **{name}**",
+        "no_server_selected": "⚠️ Active server not selected. Choose one from the list:",
+        "restart_stopping": "🔄 **Restarting {name}...**\n🛑 Sending stop command...",
+        "restart_waiting": "⏳ Waiting for shutdown... ({sec}s)",
+        "restart_starting": "🟢 Server stopped. Launching process...",
+        "restart_done": "✅ **{name}** restarted successfully and online!",
+        "restart_fail": "❌ Restart failed. Check logs.",
+        "agent_error": "❌ Error connecting to server agent: {err}",
+        "servers_overview": "📊 **Server Status Overview**\n\n{list}"
     }
 }
 

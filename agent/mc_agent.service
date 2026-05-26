@@ -1,0 +1,21 @@
+[Unit]
+Description=MC Server TG Bot Agent
+After=network.target
+
+[Service]
+# User running the Minecraft server (highly recommended not to run as root!)
+User=minecraft
+WorkingDirectory=/opt/mc/agent
+
+# Configure your specific parameters here
+ExecStart=/usr/bin/python3 mc_agent.py \
+  --port 8745 \
+  --api-key YOUR_SECURE_API_KEY \
+  --server-path /opt/minecraft/server \
+  --screen-session mc_server
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

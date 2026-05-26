@@ -1,4 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from typing import List, Tuple
 from locales import t
 
 def lang_selection_kb() -> InlineKeyboardMarkup:
@@ -10,8 +11,8 @@ def lang_selection_kb() -> InlineKeyboardMarkup:
         ]
     ])
 
-def main_menu_kb(is_running: bool, lang: str = "en") -> InlineKeyboardMarkup:
-    """Main bot menu, adapts to server status"""
+def main_menu_kb(is_running: bool, lang: str = "en", is_single_server: bool = False) -> InlineKeyboardMarkup:
+    """Main bot menu, adapts to server status and multi-server config"""
     
     status_btn = (
         InlineKeyboardButton(text=t(lang, "btn_stop"), callback_data="action_stop")
@@ -19,16 +20,23 @@ def main_menu_kb(is_running: bool, lang: str = "en") -> InlineKeyboardMarkup:
         InlineKeyboardButton(text=t(lang, "btn_start"), callback_data="action_start")
     )
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
+    inline_keyboard = [
         [status_btn],
-        [InlineKeyboardButton(text=t(lang, "btn_restart"), callback_data="action_restart"),
-         InlineKeyboardButton(text=t(lang, "btn_status"), callback_data="action_status")],
+        [
+            InlineKeyboardButton(text=t(lang, "btn_restart"), callback_data="action_restart"),
+            InlineKeyboardButton(text=t(lang, "btn_status"), callback_data="action_status")
+        ],
         [InlineKeyboardButton(text=t(lang, "btn_players"), callback_data="action_players")],
         [InlineKeyboardButton(text=t(lang, "btn_world"), callback_data="menu_world")],
         [InlineKeyboardButton(text=t(lang, "btn_logs"), callback_data="action_logs")],
         [InlineKeyboardButton(text=t(lang, "btn_custom_cmd"), callback_data="action_custom_cmd")]
-    ])
-    return kb
+    ]
+
+    # Add Switch Server button if managing multiple servers
+    if not is_single_server:
+        inline_keyboard.append([InlineKeyboardButton(text=t(lang, "btn_switch"), callback_data="menu_picker")])
+
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
 def world_menu_kb(lang: str = "en") -> InlineKeyboardMarkup:
     """Submenu: Weather and Time"""
@@ -51,3 +59,16 @@ def cancel_kb(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=t(lang, "btn_cancel"), callback_data="menu_main")]
     ])
+
+def server_picker_kb(servers_with_status: List[Tuple[str, str, bool]], lang: str = "en") -> InlineKeyboardMarkup:
+    """Keyboard for selecting active server with live status indicators"""
+    buttons = []
+    for sid, display_name, is_running in servers_with_status:
+        status_indicator = " 🟢" if is_running else " 🔴"
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"{display_name}{status_indicator}",
+                callback_data=f"select_server_{sid}"
+            )
+        ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

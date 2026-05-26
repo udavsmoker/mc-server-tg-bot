@@ -10,8 +10,18 @@ ENV/
 
 # Configuration
 .env
+servers.yaml
 
 # Logs and databases
 *.log
 *.sqlite3
 users.json
+
+# IDEs and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+.pytest_cache/
+

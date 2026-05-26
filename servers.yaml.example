@@ -1,0 +1,42 @@
+# MC Server TG Bot — Multi-Server Configuration Template
+# Copy this file to `servers.yaml` and configure it.
+# DO NOT commit `servers.yaml` to git as it contains sensitive passwords.
+
+servers:
+  # ── Example 1: Local Server (Runs on the same machine as the bot - NO AGENT NEEDED) ──────────
+  survival:
+    # Human-readable server name shown in the Telegram UI
+    display_name: "⛏️ Survival (Local)"
+    
+    # Direct local process management (uses screen and logs directly from local OS)
+    local:
+      server_path: "/home/minecraft/survival"   # Absolute path to the server folder
+      screen_session: "mc_survival"             # Name of the screen session it runs in
+      
+    # Minecraft RCON credentials for executing game commands
+    rcon:
+      host: "127.0.0.1"              # RCON host (accessible by the bot)
+      port: 25575                    # RCON port from server.properties
+      password: "your_rcon_password" # RCON password from server.properties
+      
+    # The actual Minecraft game port (optional, used for display only)
+    game_port: 25565
+
+  # ── Example 2: Remote Server (Runs on a different machine - REQUIRES mc_agent.py) ────────────
+  # creative:
+  #   # Human-readable server name shown in the Telegram UI
+  #   display_name: "🎨 Creative (Remote)"
+  #   
+  #   # Configuration for the mc_agent.py running on the remote MC server machine
+  #   agent:
+  #     url: "http://192.168.1.50:8745"             # URL where the remote agent is running
+  #     api_key: "secure_random_api_key_goes_here"  # Shared API secret key
+  #     
+  #   # Minecraft RCON credentials for executing game commands
+  #   rcon:
+  #     host: "192.168.1.50"
+  #     port: 25576
+  #     password: "creative_rcon_password"
+  #     
+  #   game_port: 25566
+
