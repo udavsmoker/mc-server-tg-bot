@@ -55,7 +55,8 @@ curl -H "X-API-Key: YOUR_CHOSEN_API_KEY" http://127.0.0.1:8745/status
 
 ## 🤖 Running as a Systemd Service
 
-To keep the agent running automatically in the background and start on system boot:
+### Option A: Single Server (Simple Setup)
+To keep a single agent running automatically in the background:
 
 1. Copy the systemd service template `mc_agent.service` to `/etc/systemd/system/`:
    ```bash
@@ -75,6 +76,49 @@ To keep the agent running automatically in the background and start on system bo
    ```bash
    sudo systemctl status mc-agent
    ```
+
+### Option B: Multiple Servers on One Machine (Template Setup) 🚀
+If you want to run **multiple separate servers** on the same machine, instead of copying the service file multiple times, use the **systemd template unit** `mc-agent@.service`:
+
+1. Copy the template service file to `/etc/systemd/system/`:
+   ```bash
+   sudo cp mc-agent@.service /etc/systemd/system/mc-agent@.service
+   ```
+2. Create a configuration directory:
+   ```bash
+   sudo mkdir -p /etc/mc-agent
+   ```
+3. Create a configuration `.env` file for **each** server. For example, for a server named `survival`, create `/etc/mc-agent/survival.env`:
+   ```bash
+   sudo nano /etc/mc-agent/survival.env
+   ```
+   Fill it with the environment variables for that server instance:
+   ```env
+   MC_AGENT_PORT=8745
+   MC_AGENT_API_KEY=YOUR_SECURE_API_KEY_1
+   MC_AGENT_SERVER_PATH=/opt/minecraft/survival
+   MC_AGENT_START_SCRIPT=startserver.sh
+   MC_AGENT_SCREEN_SESSION=mc_survival
+   ```
+4. Create another config for your second server, e.g., `/etc/mc-agent/creative.env` (using a **different port** like `8746` and its own path/screen name).
+5. Reload systemd, then you can manage each server dynamically using the `@` syntax:
+   ```bash
+   sudo systemctl daemon-reload
+
+   # Start and enable the survival agent
+   sudo systemctl enable mc-agent@survival
+   sudo systemctl start mc-agent@survival
+
+   # Start and enable the creative agent
+   sudo systemctl enable mc-agent@creative
+   sudo systemctl start mc-agent@creative
+   ```
+6. Check their individual statuses:
+   ```bash
+   sudo systemctl status mc-agent@survival
+   sudo systemctl status mc-agent@creative
+   ```
+
 
 ---
 
