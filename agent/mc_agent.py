@@ -10,6 +10,7 @@ PORT = 8745
 API_KEY = ""
 SERVER_PATH = ""
 SCREEN_SESSION = ""
+START_SCRIPT = "start.sh"
 
 async def check_auth(request):
     auth_key = request.headers.get("X-API-Key")
@@ -47,7 +48,14 @@ async def start_server(request):
     quoted_path = shlex.quote(SERVER_PATH)
     quoted_session = shlex.quote(SCREEN_SESSION)
     
-    cmd = f"cd {quoted_path} && screen -dmS {quoted_session} ./start.sh"
+    # Prefix relative script names with ./ if they don't contain directory prefix already
+    script_cmd = START_SCRIPT
+    if not (script_cmd.startswith("/") or script_cmd.startswith("./") or script_cmd.startswith("../")):
+        script_cmd = f"./{script_cmd}"
+        
+    quoted_script = shlex.quote(script_cmd)
+    
+    cmd = f"cd {quoted_path} && screen -dmS {quoted_session} {quoted_script}"
     proc = await asyncio.create_subprocess_shell(cmd)
     await proc.communicate()
     
@@ -85,13 +93,14 @@ async def ping(request):
     return web.json_response({"ok": True})
 
 def main():
-    global PORT, API_KEY, SERVER_PATH, SCREEN_SESSION
+    global PORT, API_KEY, SERVER_PATH, SCREEN_SESSION, START_SCRIPT
     
     parser = argparse.ArgumentParser(description="MC Server TG Bot - Remote Agent")
     parser.add_argument("--port", type=int, default=int(os.getenv("MC_AGENT_PORT", "8745")))
     parser.add_argument("--api-key", default=os.getenv("MC_AGENT_API_KEY", ""))
     parser.add_argument("--server-path", default=os.getenv("MC_AGENT_SERVER_PATH", ""))
     parser.add_argument("--screen-session", default=os.getenv("MC_AGENT_SCREEN_SESSION", ""))
+    parser.add_argument("--start-script", default=os.getenv("MC_AGENT_START_SCRIPT", "start.sh"))
     
     args = parser.parse_args()
     
@@ -99,6 +108,7 @@ def main():
     API_KEY = args.api_key
     SERVER_PATH = args.server_path
     SCREEN_SESSION = args.screen_session
+    START_SCRIPT = args.start_script
     
     if not API_KEY:
         print("❌ Error: --api-key or MC_AGENT_API_KEY environment variable is required!")
@@ -115,9 +125,9 @@ def main():
     if not os.path.exists(SERVER_PATH):
         print(f"⚠️ Warning: Server path does not exist: {SERVER_PATH}")
         
-    start_sh = os.path.join(SERVER_PATH, "start.sh")
+    start_sh = os.path.join(SERVER_PATH, START_SCRIPT)
     if os.path.exists(SERVER_PATH) and not os.path.exists(start_sh):
-        print(f"⚠️ Warning: start.sh not found in server path: {SERVER_PATH}")
+        print(f"⚠️ Warning: {START_SCRIPT} not found in server path: {SERVER_PATH}")
 
     app = web.Application()
     app.router.add_get("/status", get_status)
@@ -127,6 +137,7 @@ def main():
     
     print(f"🚀 Starting MC Server TG Bot Agent on port {PORT}...")
     print(f"📂 Managing server at: {SERVER_PATH}")
+    print(f"📜 Startup script: {START_SCRIPT}")
     print(f"🖥️ Screen session name: {SCREEN_SESSION}")
     
     web.run_app(app, port=PORT, host="0.0.0.0")

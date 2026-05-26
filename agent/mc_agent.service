@@ -12,6 +12,7 @@ ExecStart=/usr/bin/python3 mc_agent.py \
   --port 8745 \
   --api-key YOUR_SECURE_API_KEY \
   --server-path /opt/minecraft/server \
+  --start-script start.sh \
   --screen-session mc_server
 
 Restart=always

@@ -32,10 +32,20 @@ python3 mc_agent.py \
   --port 8745 \
   --api-key "YOUR_CHOSEN_API_KEY" \
   --server-path "/path/to/minecraft/server" \
+  --start-script "startserver.sh" \
   --screen-session "mc_survival"
 ```
 
-Verify that it works using `curl` from another shell or machine:
+#### 💡 Configuration Details:
+- **`--server-path`**: The absolute path to the directory containing your Minecraft server files.
+  - The agent uses this directory to `cd` into before running your start script.
+  - The agent reads logs from `{server-path}/logs/latest.log`.
+- **`--start-script`** *(Optional, default: `start.sh`)*: The script inside the server directory used to launch your server.
+  - If your script has a custom name or spaces (like `start server.sh` or `run.sh`), specify it here!
+  - The agent will automatically run it as `./"start server.sh"` in the screen session.
+- **`--screen-session`**: The name of the `screen` session to run the Minecraft server inside.
+
+Verify that the agent works using `curl` from another shell or machine:
 ```bash
 curl -H "X-API-Key: YOUR_CHOSEN_API_KEY" http://127.0.0.1:8745/status
 # Expected: {"running": false, "screen_session": "mc_survival"}
