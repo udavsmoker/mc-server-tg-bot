@@ -17,7 +17,22 @@ async def cmd_menu(message: types.Message, lang: str, registry, server=None):
         return
 
     if not server:
-        # Handled by ActiveServerMiddleware in multi-server, but fallback just in case
+        # In multi-server mode, try to resolve their last active server
+        from db import get_last_server
+        active_server_id = get_last_server(uid)
+        server = registry.get(active_server_id) if active_server_id else None
+
+    if not server:
+        # If still no active server is selected, show the server picker
+        from keyboards import server_picker_kb
+        servers_list = registry.list_all()
+        statuses = await registry.status_all()
+        servers_with_status = [(sid, name, statuses.get(sid, False)) for sid, name in servers_list]
+        await message.answer(
+            t(lang, "no_server_selected"),
+            reply_markup=server_picker_kb(servers_with_status, lang),
+            parse_mode="Markdown"
+        )
         return
 
     is_running = await server.is_running()
